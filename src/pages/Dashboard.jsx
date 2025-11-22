@@ -15,10 +15,10 @@ const Dashboard = () => {
     { id: 4, type: 'topup', amount: 10000, to: 'Emily Davis', date: '2024-01-14 09:20', status: 'completed' },
     { id: 5, type: 'payout', amount: 2750, to: 'Alex Brown', date: '2024-01-13 13:10', status: 'completed' },
     { id: 6, type: 'topup', amount: 7500, to: 'David Miller', date: '2024-01-13 10:30', status: 'completed' },
-    { id: 3, type: 'payout', amount: 3200, to: 'Mike Wilson', date: '2024-01-14 16:45', status: 'pending' },
-    { id: 4, type: 'topup', amount: 10000, to: 'Emily Davis', date: '2024-01-14 09:20', status: 'completed' },
-    { id: 5, type: 'payout', amount: 2750, to: 'Alex Brown', date: '2024-01-13 13:10', status: 'completed' },
-    { id: 6, type: 'topup', amount: 7500, to: 'David Miller', date: '2024-01-13 10:30', status: 'completed' }
+    { id: 7, type: 'payout', amount: 3200, to: 'Mike Wilson', date: '2024-01-14 16:45', status: 'pending' },
+    { id: 8, type: 'topup', amount: 10000, to: 'Emily Davis', date: '2024-01-14 09:20', status: 'completed' },
+    { id: 9, type: 'payout', amount: 2750, to: 'Alex Brown', date: '2024-01-13 13:10', status: 'completed' },
+    { id: 10, type: 'topup', amount: 7500, to: 'David Miller', date: '2024-01-13 10:30', status: 'completed' }
   ];
 
   const formatCurrency = (amount) => {

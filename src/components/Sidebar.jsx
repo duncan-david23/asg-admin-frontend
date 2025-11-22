@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-// import { supabase } from '../utils/supabase'
+import { supabase } from '../utils/supabase.js'
 // import { useAppContext } from '../contexts/AppContext'
 
 const Sidebar = () => {
@@ -27,17 +27,16 @@ const Sidebar = () => {
 
 
      const handleSignOut = async () => {
-        // const { error } = await supabase.auth.signOut();
-        // if (error) {
-        //     console.error('Error signing out:', error.message);
-        // } else {
-        //     console.log('Signed out successfully');
-        //     window.location.href = '/login'; 
-        //     localStorage.removeItem('accessToken');
-        //     localStorage.removeItem('userId');
-        //     localStorage.removeItem('userEmail');
-        //     localStorage.removeItem('business_name');
-        // }
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error signing out:', error.message);
+        } else {
+            console.log('Signed out successfully');
+            window.location.href = '/login'; 
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+           
+        }
     };
 
 

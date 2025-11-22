@@ -1,22 +1,26 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Auth from './pages/Auth'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Investors from './pages/Investors'
 import Transactions from './pages/Transactions'
 import Sidebar from './components/Sidebar'
 import { useLocation } from 'react-router-dom'
+import AuthWrapper from './components/AuthWrapper'
 
 const App = () => {
   
   
  const location = useLocation()
- const isAuthPage = ['/'].includes(location.pathname)
+ const isAuthPage = ['/', '/login', '/register'].includes(location.pathname)
 
   if (isAuthPage) {
     return (
       <Routes>
-          <Route path='/' element={<Auth/>} />
+          <Route path='/' element={<Login/>} />
+          <Route path='/login' element={<Login/>} />
+          <Route path='/register' element={<Register/>} />
       </Routes>
     )
   }
@@ -30,9 +34,21 @@ const App = () => {
    
 
     <Routes>
-        <Route path='/dashboard' element={<Dashboard/>} />
-        <Route path='/investors' element={<Investors/>} />
-        <Route path='/transactions' element={<Transactions/>} />
+        <Route path='/dashboard' element={
+          <AuthWrapper>
+            <Dashboard/>
+          </AuthWrapper>
+      } />
+        <Route path='/investors' element={
+          <AuthWrapper>
+            <Investors/>
+          </AuthWrapper>
+        } />
+        <Route path='/transactions' element={
+          <AuthWrapper>
+            <Transactions/>
+          </AuthWrapper>
+        } />
     </Routes>
 
      </div>

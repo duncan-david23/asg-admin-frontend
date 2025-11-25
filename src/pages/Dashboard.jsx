@@ -1,4 +1,6 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
+import axios from 'axios';
+import {supabase} from '../utils/supabase';
 
 const Dashboard = () => {
   // Sample data
@@ -21,6 +23,10 @@ const Dashboard = () => {
     { id: 10, type: 'topup', amount: 7500, to: 'David Miller', date: '2024-01-13 10:30', status: 'completed' }
   ];
 
+  const [userProfile, setUserProfile] = useState(null);
+  const [totalInvestmentAmount, setTotalInvestmentAmount] = useState(0);
+  const [totalInvestors, setTotalInvestors] = useState(0);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
@@ -36,6 +42,53 @@ const Dashboard = () => {
       minute: '2-digit'
     });
   };
+
+useEffect(() => {
+  const fetchUserProfiles = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    const profileResponse = await axios.get(
+      "http://localhost:3001/api/users/all-profiles",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+
+    // Extract the array
+    const profiles = profileResponse.data;
+
+    if (!Array.isArray(profiles)) {
+      console.error("Profiles is not an array:", profiles);
+      return;
+    }
+
+    // Calculate total wallet (sum)
+    const totalInvestment = profiles.reduce(
+      (sum, profile) => sum + (profile.wallet || 0),
+      0
+    );
+
+    setTotalInvestmentAmount(totalInvestment);
+
+    // Count investors
+    setTotalInvestors(profiles.length);
+  };
+
+  fetchUserProfiles();
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
 
   const getTransactionIcon = (type) => {
     if (type === 'payout') {
@@ -74,7 +127,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid - Mobile responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4   sm:gap-6 mb-6 sm:mb-8">
         {/* Total Investment Card */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-full -mr-4 -mt-4 sm:-mr-6 sm:-mt-6"></div>
@@ -88,12 +141,12 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{formatCurrency(statsData.totalInvestment)}</p>
+          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{formatCurrency(totalInvestmentAmount)}</p>
           <p className="text-blue-100 text-xs sm:text-sm">All time investment volume</p>
         </div>
 
         {/* Total Payout Card */}
-        <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white relative overflow-hidden">
+        {/* <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-full -mr-4 -mt-4 sm:-mr-6 sm:-mt-6"></div>
           
           <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
@@ -107,7 +160,7 @@ const Dashboard = () => {
           
           <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{formatCurrency(statsData.totalPayout)}</p>
           <p className="text-green-100 text-xs sm:text-sm">Total commissions paid out</p>
-        </div>
+        </div> */}
 
         {/* Total Investors Card */}
         <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white relative overflow-hidden">
@@ -121,23 +174,23 @@ const Dashboard = () => {
               </svg>
             </div>
           </div>
-          
-          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{statsData.totalInvestors.toLocaleString()}</p>
+
+          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{totalInvestors && totalInvestors}</p>
           <p className="text-purple-100 text-xs sm:text-sm">Active investors</p>
         </div>
       </div>
 
       {/* Recent Transactions - Mobile Responsive */}
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+        {/* <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Transactions</h2>
            
           </div>
-        </div>
+        </div> */}
         
         {/* Mobile View - Cards */}
-        <div className="sm:hidden">
+        {/* <div className="sm:hidden">
           <div className="divide-y divide-gray-200">
             {recentTransactions.map((transaction) => (
               <div key={transaction.id} className="p-4 hover:bg-gray-50 transition-colors duration-150">
@@ -177,10 +230,10 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Desktop View - Table */}
-        <div className="hidden sm:block overflow-x-auto">
+        {/* <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -229,9 +282,9 @@ const Dashboard = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </div> */}
         
-        {/* Empty State */}
+        {/* Empty State
         {recentTransactions.length === 0 && (
           <div className="text-center py-8 sm:py-12">
             <svg className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +293,7 @@ const Dashboard = () => {
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">No transactions yet</h3>
             <p className="text-gray-500 text-sm sm:text-base">Transactions will appear here once processing starts.</p>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

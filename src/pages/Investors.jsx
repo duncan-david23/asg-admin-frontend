@@ -1,90 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, use } from 'react';
+import axios from 'axios';
+import {supabase} from '../utils/supabase';
+
+
 
 const Investors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [userProfiles, setUserProfiles] = useState([]);
+  const [avatar, setAvatar] = useState('');
+  const [loading, setLoading] = useState(false);
   const [topUpData, setTopUpData] = useState({
     reference: '',
     amount: '',
     investorDetails: null
   });
 
-  // Sample investors data
-  const investors = [
-    {
-      id: 1,
-      name: 'John Smith',
-      reference: 'ACC-JD45566H4',
-      avatar: 'JS',
-      accountBalance: 56.00,
-      withdrawableCommission: 3200,
-      joinDate: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      reference: 'ACC-JD455656Y',
-      avatar: 'SJ',
-      accountBalance: 8500,
-      withdrawableCommission: 1800,
-      joinDate: '2024-01-10'
-    },
-    {
-      id: 3,
-      name: 'Mike Wilson',
-      reference: 'ACC-JD4556FGH',
-      avatar: 'MW',
-      accountBalance: 21000,
-      withdrawableCommission: 5200,
-      joinDate: '2024-01-08'
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      reference: 'ACC-JD4556HJO',
-      avatar: 'ED',
-      accountBalance: 7500,
-      withdrawableCommission: 1500,
-      joinDate: '2024-01-05'
-    },
-    {
-      id: 5,
-      name: 'Alex Brown',
-      reference: 'ACC-JD67866H4',
-      avatar: 'AB',
-      accountBalance: 16800,
-      withdrawableCommission: 4200,
-      joinDate: '2024-01-03'
-    },
-    {
-      id: 6,
-      name: 'David Miller',
-      reference: 'ACC-JD4556YT7',
-      avatar: 'DM',
-      accountBalance: 9200,
-      withdrawableCommission: 2300,
-      joinDate: '2024-01-01'
-    },
-    {
-      id: 7,
-      name: 'Alex Brown',
-      reference: 'ACC-JD4556789',
-      avatar: 'AB',
-      accountBalance: 16800,
-      withdrawableCommission: 4200,
-      joinDate: '2024-01-03'
-    },
-    {
-      id: 8,
-      name: 'David Miller',
-      reference: 'ACC-JD455678H',
-      avatar: 'DM',
-      accountBalance: 9200,
-      withdrawableCommission: 2300,
-      joinDate: '2024-01-01'
-    }
-  ];
-
+  
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
@@ -100,10 +32,45 @@ const Investors = () => {
     });
   };
 
+
+
+
+
+
+
+
+  useEffect(() => {
+  const fetchUserProfiles = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    try {
+        setLoading(true);
+
+          const profileResponse = await axios.get(
+      "http://localhost:3001/api/users/all-profiles",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+    const results = profileResponse.data;
+    setUserProfiles(results);
+
+  } catch (error) {
+    console.error("Error fetching user profiles:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  fetchUserProfiles();
+}, []);
+
   // Filter investors based on search
-  const filteredInvestors = investors.filter(investor =>
-    investor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    investor.reference.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInvestors = userProfiles.filter(investor =>
+    investor.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    investor.account_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Handle top up form changes
@@ -114,15 +81,24 @@ const Investors = () => {
       [name]: value
     }));
 
-    // Auto-search investor when reference is entered
-    if (name === 'reference' && value.length >= 3) {
-      const foundInvestor = investors.find(inv => 
-        inv.reference.toLowerCase() === value.toLowerCase()
-      );
-      setTopUpData(prev => ({
-        ...prev,
-        investorDetails: foundInvestor || null
-      }));
+    // Auto-search investor when account number is entered
+    if (name === 'account_number' && value.length >= 3) {
+      const foundInvestor = filteredInvestors.find(inv =>
+  inv.account_number.toLowerCase() === value.toLowerCase()
+);
+
+setTopUpData(prev => ({
+  ...prev,
+  investorDetails: foundInvestor
+    ? {
+        name: foundInvestor.user_name,
+        avatar: foundInvestor.user_name
+          .substring(0, 2)
+          .toUpperCase(),
+        accountBalance: foundInvestor.wallet
+      }
+    : null
+}));
     }
   };
 
@@ -131,21 +107,35 @@ const Investors = () => {
     // Handle top up logic here
     console.log('Top up data:', topUpData);
     setShowTopUpModal(false);
-    setTopUpData({ reference: '', amount: '', investorDetails: null });
+    setTopUpData({ account_number: '', amount: '', investorDetails: null });
     // Add your API call here
   };
 
   const handleSearchInvestor = () => {
-    if (topUpData.reference.length >= 3) {
-      const foundInvestor = investors.find(inv => 
-        inv.reference.toLowerCase() === topUpData.reference.toLowerCase()
+    if (topUpData.account_number.length >= 3) {
+      const foundInvestor = filteredInvestors.find(inv =>
+        inv.account_number.toLowerCase() === topUpData.account_number.toLowerCase()
       );
+
       setTopUpData(prev => ({
         ...prev,
-        investorDetails: foundInvestor || null
+        investorDetails: foundInvestor
+          ? {
+              name: foundInvestor.user_name,
+              avatar: foundInvestor.user_name
+                .substring(0, 2)
+                .toUpperCase(),
+              accountBalance: foundInvestor.wallet
+            }
+          : null
       }));
-    }
   };
+  };
+
+
+
+
+  
 
   return (
     <div className="h-screen bg-gray-50 p-4 sm:p-6 pt-20 w-full md:overflow-x-scroll">
@@ -194,11 +184,11 @@ const Investors = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                  {investor.avatar}
+                  {investor.user_name.charAt(0).toUpperCase()}{investor.user_name.charAt(1).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">{investor.name}</h3>
-                  <p className="text-gray-500 text-sm">{investor.reference}</p>
+                  <h3 className="font-semibold text-gray-900 text-lg">{investor.user_name}</h3>
+                  <p className="text-gray-500 text-sm">{investor.account_number}</p>
                 </div>
               </div>
             </div>
@@ -208,7 +198,7 @@ const Investors = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-blue-900">Account Balance</span>
                 <span className="text-lg font-bold text-blue-600">
-                  {formatCurrency(investor.accountBalance)}
+                  {formatCurrency(investor.wallet)}
                 </span>
               </div>
             </div>
@@ -218,7 +208,7 @@ const Investors = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-green-900">Withdrawable Commission</span>
                 <span className="text-lg font-bold text-green-600">
-                  {formatCurrency(investor.withdrawableCommission)}
+                  {formatCurrency(investor.withdrawable_commission)}
                 </span>
               </div>
             </div>
@@ -226,7 +216,7 @@ const Investors = () => {
             {/* Footer */}
             <div className="flex justify-between items-center pt-3 border-t border-gray-200">
               <span className="text-xs text-gray-500">
-                Joined {formatDate(investor.joinDate)}
+                Joined {formatDate(investor.created_at)}
               </span>
             </div>
           </div>
@@ -234,16 +224,21 @@ const Investors = () => {
       </div>
 
       {/* Empty State */}
-      {filteredInvestors.length === 0 && (
+      {loading &&(
+        <div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading investors...</h3>
+        </div>
+      )} {(!loading && filteredInvestors.length === 0) && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No investors found</h3>
-          <p className="text-gray-500">
-            {searchTerm ? 'Try adjusting your search terms' : 'No investors in the system yet'}
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No investors found</h3>
+        <p className="text-gray-500">
+          {searchTerm ? 'Try adjusting your search terms' : 'No investors in the system yet'}
           </p>
         </div>
       )}
@@ -273,11 +268,11 @@ const Investors = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    name="reference"
-                    value={topUpData.reference}
+                    name="account_number"
+                    value={topUpData.account_number}
                     onChange={handleTopUpChange}
-                    placeholder="Enter reference number (e.g., INV-001)"
-                    className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter account number (e.g., ACC-FFJJ001)"
+                    className="w-full pl-4 pr-12 py-3 border uppercase border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                   <button

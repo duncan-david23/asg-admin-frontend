@@ -1,72 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {supabase} from '../utils/supabase';
+import toast from 'react-hot-toast';
+
+
 
 const Transactions = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Sample withdrawal requests data
-  const withdrawalRequests = [
-    {
-      id: 1,
-      fullName: 'John Smith',
-      reference: 'ACC-JD45566H4',
-      paymentMethod: 'mtn',
-      accountNumber: '0241234567',
-      amount: 2500,
-      date: '2024-01-15 14:30',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      fullName: 'Sarah Johnson',
-      reference: 'ACC-JD455656Y',
-      paymentMethod: 'bank',
-      accountNumber: '1234567890123',
-      amount: 1800,
-      date: '2024-01-15 11:15',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      fullName: 'Mike Wilson',
-      reference: 'ACC-JD4556FGH',
-      paymentMethod: 'airteltigo',
-      accountNumber: '0277654321',
-      amount: 3200,
-      date: '2024-01-14 16:45',
-      status: 'pending'
-    },
-    {
-      id: 4,
-      fullName: 'Emily Davis',
-      reference: 'ACC-JD4556HJO',
-      paymentMethod: 'telecel',
-      accountNumber: '0209876543',
-      amount: 1500,
-      date: '2024-01-14 09:20',
-      status: 'completed'
-    },
-    {
-      id: 5,
-      fullName: 'Alex Brown',
-      reference: 'ACC-JD67866H4',
-      paymentMethod: 'bank',
-      accountNumber: '9876543210987',
-      amount: 2750,
-      date: '2024-01-13 13:10',
-      status: 'completed'
-    },
-    {
-      id: 6,
-      fullName: 'David Miller',
-      reference: 'ACC-JD4556YT7',
-      paymentMethod: 'mtn',
-      accountNumber: '0245556677',
-      amount: 4200,
-      date: '2024-01-13 10:30',
-      status: 'pending'
-    }
-  ];
+  // const withdrawalRequests = [
+  //   {
+  //     id: 1,
+  //     fullName: 'John Smith',
+  //     reference: 'ACC-JD45566H4',
+  //     paymentMethod: 'mtn',
+  //     accountNumber: '0241234567',
+  //     amount: 2500,
+  //     date: '2024-01-15 14:30',
+  //     status: 'pending'
+  //   },
+  //   {
+  //     id: 2,
+  //     fullName: 'Sarah Johnson',
+  //     reference: 'ACC-JD455656Y',
+  //     paymentMethod: 'bank',
+  //     accountNumber: '1234567890123',
+  //     amount: 1800,
+  //     date: '2024-01-15 11:15',
+  //     status: 'completed'
+  //   },
+  //   {
+  //     id: 3,
+  //     fullName: 'Mike Wilson',
+  //     reference: 'ACC-JD4556FGH',
+  //     paymentMethod: 'airteltigo',
+  //     accountNumber: '0277654321',
+  //     amount: 3200,
+  //     date: '2024-01-14 16:45',
+  //     status: 'pending'
+  //   },
+  //   {
+  //     id: 4,
+  //     fullName: 'Emily Davis',
+  //     reference: 'ACC-JD4556HJO',
+  //     paymentMethod: 'telecel',
+  //     accountNumber: '0209876543',
+  //     amount: 1500,
+  //     date: '2024-01-14 09:20',
+  //     status: 'completed'
+  //   },
+  //   {
+  //     id: 5,
+  //     fullName: 'Alex Brown',
+  //     reference: 'ACC-JD67866H4',
+  //     paymentMethod: 'bank',
+  //     accountNumber: '9876543210987',
+  //     amount: 2750,
+  //     date: '2024-01-13 13:10',
+  //     status: 'completed'
+  //   },
+  //   {
+  //     id: 6,
+  //     fullName: 'David Miller',
+  //     reference: 'ACC-JD4556YT7',
+  //     paymentMethod: 'mtn',
+  //     accountNumber: '0245556677',
+  //     amount: 4200,
+  //     date: '2024-01-13 10:30',
+  //     status: 'pending'
+  //   }
+  // ];
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-GH', {
@@ -121,16 +128,48 @@ const Transactions = () => {
   const filteredRequests = withdrawalRequests.filter(request => {
     const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
     const matchesSearch = 
-      request.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.accountNumber.includes(searchTerm);
+      request.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.user_account_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.account_number.includes(searchTerm);
     
     return matchesStatus && matchesSearch;
   });
 
-  const handleApprove = (requestId) => {
+  const handleApprove = async(requestId) => {
     console.log('Approving request:', requestId);
     // Add your approval logic here - update status to 'completed'
+
+
+    
+    try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const accessToken = session?.access_token;
+          setLoading(true);
+
+          const response = await axios.put(
+      "http://localhost:3001/api/users/admin/withdrawals/approve", {withdrawalId: requestId},
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+    toast.success("Withdrawal request approved successfully!");
+
+
+
+    // Update local state to reflect the change
+    setWithdrawalRequests(prevRequests =>
+      prevRequests.map(req =>
+        req.id === requestId ? { ...req, status: 'completed' } : req
+      )
+    );
+
+  } catch (error) {
+    console.error("Error approving withdrawal requests:", error);
+  } finally {
+    setLoading(false);
+  }
+
+
   };
 
   const totalPending = withdrawalRequests.filter(req => req.status === 'pending').length;
@@ -138,6 +177,42 @@ const Transactions = () => {
   const pendingAmount = withdrawalRequests
     .filter(req => req.status === 'pending')
     .reduce((sum, req) => sum + req.amount, 0);
+
+
+
+
+
+
+useEffect(() => {
+  const fetchWithdrawalRequests = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    try {
+        setLoading(true);
+
+          const response = await axios.get(
+      "http://localhost:3001/api/users/admin/withdrawals",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+    const results = response.data.withdrawals;
+    setWithdrawalRequests(results);
+
+  } catch (error) {
+    console.error("Error fetching withdrawal requests:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  fetchWithdrawalRequests();
+}, []);
+
+
+
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-6 pt-20 md:w-full md:overflow-scroll">
@@ -259,15 +334,15 @@ const Transactions = () => {
                 <div className="flex items-start space-x-4">
                   {/* Avatar */}
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                    {request.fullName.split(' ').map(n => n[0]).join('')}
+                    {request.full_name.split(' ').map(n => n[0]).join('')}
                   </div>
                   
                   {/* Details */}
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">{request.fullName}</h3>
-                        <p className="text-gray-500 font-mono">{request.reference}</p>
+                        <h3 className="text-xl font-bold text-gray-900">{request.full_name}</h3>
+                        <p className="text-gray-500 font-mono">{request.user_account_number}</p>
                       </div>
                       
                       {/* Amount - Large and prominent */}
@@ -275,18 +350,18 @@ const Transactions = () => {
                         <p className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
                           {formatCurrency(request.amount)}
                         </p>
-                        <p className="text-sm text-gray-500">{formatDate(request.date)}</p>
+                        <p className="text-sm text-gray-500">{formatDate(request.created_at)}</p>
                       </div>
                     </div>
                     
                     {/* Payment Method */}
                     <div className="mt-4 flex items-center space-x-4">
                       <div className="flex items-center space-x-2 bg-gray-50 rounded-xl px-3 py-2">
-                        <span className="text-lg">{getPaymentMethodIcon(request.paymentMethod)}</span>
-                        <span className="font-semibold text-gray-700">{getPaymentMethodLabel(request.paymentMethod)}</span>
+                        <span className="text-lg">{getPaymentMethodIcon(request.payment_method)}</span>
+                        <span className="font-semibold text-gray-700">{getPaymentMethodLabel(request.payment_method)}</span>
                       </div>
                       <div className="font-mono text-gray-600 bg-gray-50 rounded-xl px-3 py-2">
-                        {request.accountNumber}
+                        {request.account_number}
                       </div>
                     </div>
                   </div>

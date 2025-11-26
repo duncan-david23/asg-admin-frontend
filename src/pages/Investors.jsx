@@ -1,6 +1,7 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, } from 'react';
 import axios from 'axios';
 import {supabase} from '../utils/supabase';
+import { toast } from 'react-hot-toast';
 
 
 
@@ -13,7 +14,8 @@ const Investors = () => {
   const [topUpData, setTopUpData] = useState({
     reference: '',
     amount: '',
-    investorDetails: null
+    investorDetails: null,
+    userId: '',
   });
 
   
@@ -95,26 +97,70 @@ setTopUpData(prev => ({
         avatar: foundInvestor.user_name
           .substring(0, 2)
           .toUpperCase(),
-        accountBalance: foundInvestor.wallet
+        accountBalance: foundInvestor.wallet,
+        userId: foundInvestor.user_id,
       }
     : null
 }));
     }
   };
 
-  const handleTopUpSubmit = (e) => {
-    e.preventDefault();
-    // Handle top up logic here
-    console.log('Top up data:', topUpData);
+
+
+
+  // Handle top up form submission
+  const handleTopUpSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!topUpData.investorDetails?.userId) {
+    toast.error("Please select a valid investor first");
+    return;
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    setLoading(true);
+
+    const response = await axios.put(
+      "http://localhost:3001/api/users/top-up-wallet",
+      {
+        userId: topUpData.investorDetails.userId,
+        amount: parseFloat(topUpData.amount)
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+
+    toast.success("Top up successful!");
+
+    // Update local state
+    setUserProfiles(prevProfiles =>
+      prevProfiles.map(profile =>
+        profile.account_number === topUpData.account_number
+          ? { ...profile, wallet: profile.wallet + parseFloat(topUpData.amount) }
+          : profile
+      )
+    );
+
     setShowTopUpModal(false);
-    setTopUpData({ account_number: '', amount: '', investorDetails: null });
-    // Add your API call here
-  };
+    setTopUpData({ account_number: '', amount: '', investorDetails: null, userId: '' });
+
+  } catch (error) {
+    console.error("Error topping up wallet:", error);
+    toast.error("Failed to top up wallet");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSearchInvestor = () => {
     if (topUpData.account_number.length >= 3) {
       const foundInvestor = filteredInvestors.find(inv =>
         inv.account_number.toLowerCase() === topUpData.account_number.toLowerCase()
+      
       );
 
       setTopUpData(prev => ({
@@ -125,7 +171,8 @@ setTopUpData(prev => ({
               avatar: foundInvestor.user_name
                 .substring(0, 2)
                 .toUpperCase(),
-              accountBalance: foundInvestor.wallet
+              accountBalance: foundInvestor.wallet,
+              userId: foundInvestor.user_id,
             }
           : null
       }));
@@ -338,7 +385,7 @@ setTopUpData(prev => ({
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg"
                 >
-                  Top Up Wallet
+                  {loading ? 'Processing...' : 'Top Up Wallet'}
                 </button>
               </div>
             </form>

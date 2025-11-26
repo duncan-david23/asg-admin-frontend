@@ -135,8 +135,7 @@ const Transactions = () => {
     return matchesStatus && matchesSearch;
   });
 
-  const handleApprove = async(requestId) => {
-    console.log('Approving request:', requestId);
+  const handleApprove = async(requestId, requestAmount, userId ) => {
     // Add your approval logic here - update status to 'completed'
 
 
@@ -147,7 +146,7 @@ const Transactions = () => {
           setLoading(true);
 
           const response = await axios.put(
-      "http://localhost:3001/api/users/admin/withdrawals/approve", {withdrawalId: requestId},
+      "https://agi-backend.onrender.com/api/users/admin/withdrawals/approve", {withdrawalId: requestId, amount: requestAmount, userId: userId},
       {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
@@ -192,7 +191,7 @@ useEffect(() => {
         setLoading(true);
 
           const response = await axios.get(
-      "http://localhost:3001/api/users/admin/withdrawals",
+      "https://agi-backend.onrender.com/api/users/admin/withdrawals",
       {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
@@ -326,6 +325,10 @@ useEffect(() => {
 
       {/* Requests Grid */}
       <div className="grid gap-6">
+        {loading && (<div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading requests...</h3>
+        </div>)}
         {filteredRequests.map((request) => (
           <div key={request.id} className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 hover:shadow-2xl hover:border-blue-200/50 transition-all  transform hover:-translate-y-1">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -378,7 +381,7 @@ useEffect(() => {
                 {/* Approve Button - Only show for pending requests */}
                 {request.status === 'pending' && (
                   <button
-                    onClick={() => handleApprove(request.id)}
+                    onClick={() => handleApprove(request.id, request.amount, request.user_id)}
                     className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 group/btn"
                   >
                     <span>Approve Payment</span>
@@ -394,6 +397,7 @@ useEffect(() => {
       </div>
 
       {/* Empty State */}
+      
       {filteredRequests.length === 0 && (
         <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50">
           <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">

@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [totalInvestmentAmount, setTotalInvestmentAmount] = useState(0);
   const [totalInvestors, setTotalInvestors] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-GH', {
@@ -45,11 +46,13 @@ const Dashboard = () => {
 
 useEffect(() => {
   const fetchUserProfiles = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
 
+    try {
+       const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+      setLoading(true);
     const profileResponse = await axios.get(
-      "http://localhost:3001/api/users/all-profiles",
+      "https://agi-backend.onrender.com/api/users/all-profiles",
       {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
@@ -68,11 +71,16 @@ useEffect(() => {
       (sum, profile) => sum + (profile.wallet || 0),
       0
     );
-
+   
     setTotalInvestmentAmount(totalInvestment);
-
-    // Count investors
     setTotalInvestors(profiles.length);
+      
+    } catch (error) {
+      console.error("Error fetching user profiles:", error);
+    } finally {
+      setLoading(false);
+    }
+   
   };
 
   fetchUserProfiles();
@@ -125,6 +133,10 @@ useEffect(() => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Welcome back! Here's your investment overview</p>
       </div>
+      {loading && (<div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Admin Data...</h3>
+        </div>)}
 
       {/* Stats Grid - Mobile responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4   sm:gap-6 mb-6 sm:mb-8">

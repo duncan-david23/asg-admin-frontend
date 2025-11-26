@@ -50,7 +50,7 @@ const Investors = () => {
         setLoading(true);
 
           const profileResponse = await axios.get(
-      "http://localhost:3001/api/users/all-profiles",
+      "https://agi-backend.onrender.com/api/users/all-profiles",
       {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
@@ -123,7 +123,7 @@ setTopUpData(prev => ({
     setLoading(true);
 
     const response = await axios.put(
-      "http://localhost:3001/api/users/top-up-wallet",
+      "https://agi-backend.onrender.com/api/users/top-up-wallet",
       {
         userId: topUpData.investorDetails.userId,
         amount: parseFloat(topUpData.amount)

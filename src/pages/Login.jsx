@@ -173,7 +173,7 @@ const SignIn = () => {
               </motion.button>
             </form>
 
-            <div className="mt-8 text-center">
+            {/* <div className="mt-8 text-center">
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <button
@@ -183,7 +183,7 @@ const SignIn = () => {
                   Register now
                 </button>
               </p>
-            </div>
+            </div> */}
           </motion.div>
 
           {/* Right Side - Features & Benefits */}

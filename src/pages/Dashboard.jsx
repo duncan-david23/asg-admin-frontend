@@ -152,8 +152,8 @@ useEffect(() => {
               </svg>
             </div>
           </div>
-          
-          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{formatCurrency(totalInvestmentAmount)}</p>
+
+          <p className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 relative z-10">{formatCurrency(totalInvestmentAmount) || formatCurrency(0)}</p>
           <p className="text-blue-100 text-xs sm:text-sm">All time investment volume</p>
         </div>
 

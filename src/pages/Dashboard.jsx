@@ -133,7 +133,7 @@ useEffect(() => {
     console.log("Load Tasks button clicked");
         setTasksLoading(true);
     try {
-        const response = await axios.get('http://localhost:3001/api/users/load-tasks');
+        const response = await axios.get('https://agi-backend.onrender.com/api/users/load-tasks');
         console.log("Tasks loaded successfully:", response.data);
     } catch (error) {
       console.error("Error loading tasks:", error);

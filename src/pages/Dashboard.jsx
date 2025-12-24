@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [totalInvestmentAmount, setTotalInvestmentAmount] = useState(0);
   const [totalInvestors, setTotalInvestors] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [taskLoading, setTasksLoading] = useState(false);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-GH', {
@@ -48,7 +49,8 @@ useEffect(() => {
   const fetchUserProfiles = async () => {
 
     try {
-       const { data: { session } } = await supabase.auth.getSession();
+
+    const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
       setLoading(true);
     const profileResponse = await axios.get(
@@ -126,12 +128,31 @@ useEffect(() => {
     return type === 'payout' ? 'Commission' : 'Wallet Funding';
   };
 
+
+  const handleLoadTasks = async () => {
+    console.log("Load Tasks button clicked");
+        setTasksLoading(true);
+    try {
+        const response = await axios.get('http://localhost:3001/api/users/load-tasks');
+        console.log("Tasks loaded successfully:", response.data);
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    } finally {
+      setTasksLoading(false);
+    }
+
+  };
+
   return (
     <div className="h-screen bg-gray-50 p-4 sm:p-6 pt-20 w-full md:overflow-scroll">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Welcome back! Here's your investment overview</p>
+
+        <div className='mt-4'>
+          <button disabled={taskLoading} onClick={handleLoadTasks} className='bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:scale-105'>{taskLoading ? 'Loading...' : 'Load Tasks'}</button>
+        </div>
       </div>
       {loading && (<div className="text-center py-12">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
